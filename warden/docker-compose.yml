@@ -1,0 +1,68 @@
+# Whole app:      docker compose up -d --build        -> http://localhost:3000
+# Database only:  docker compose up -d postgres       (for local dev with mvnw + npm run dev)
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: warden-postgres
+    environment:
+      POSTGRES_DB: warden
+      POSTGRES_USER: warden
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-warden}
+    ports:
+      # 5433 on the host so it does not clash with a locally installed PostgreSQL
+      - "5433:5432"
+    volumes:
+      - warden-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warden -d warden"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: warden-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Optional overrides (JWT_SECRET, SEED_* ...): copy .env.example to .env
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Demo stack: the dev profile supplies throwaway secrets and the demo accounts. For a real
+      # deployment set SPRING_PROFILES_ACTIVE to empty and give JWT_SECRET, DB_*, COOKIE_SECURE in .env.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: jdbc:postgresql://postgres:5432/warden
+      DB_USERNAME: warden
+      DB_PASSWORD: ${DB_PASSWORD:-warden}
+      # Behind nginx: take the client IP from X-Forwarded-For (login rate limit is per username + IP).
+      # nginx overwrites that header with the address it sees, so a client cannot inject its own.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    # No published port: the browser reaches the API through the frontend's nginx.
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8080/actuator/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Demo stack only: show the demo-account shortcuts on the login page.
+        VITE_SHOW_DEMO_ACCOUNTS: "true"
+    container_name: warden-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # nginx runs unprivileged, so it listens on 8080 inside the container
+      - "3000:8080"
+
+volumes:
+  warden-pgdata:

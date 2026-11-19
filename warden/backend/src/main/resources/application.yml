@@ -1,0 +1,68 @@
+# Production-safe defaults: no secret has a default here, so a missing one stops the app at startup
+# instead of running with a public value. Local development and the demo Docker stack use the "dev"
+# profile (application-dev.yml), which fills in throwaway values.
+spring:
+  application:
+    name: warden
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway owns the schema; Hibernate only checks that entities match it.
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      # Lazy collections (roles, departments, permissions) load in batches of up to 100 owners:
+      # a page of users costs a fixed number of queries instead of 1 + N.
+      hibernate.default_batch_fetch_size: 100
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    # Required, base64, >= 32 bytes: openssl rand -base64 32
+    secret: ${JWT_SECRET}
+    # Short-lived on purpose: a leaked access token is useful for 15 minutes at most.
+    expiration: PT15M
+    issuer: warden
+  auth:
+    refresh-token-ttl: P7D
+    # Secure flag on the refresh cookie: production runs behind HTTPS. The dev profile turns it off.
+    cookie-secure: ${COOKIE_SECURE:true}
+    login-max-failures: 5
+    # Failures allowed per client IP across all usernames (password spraying); higher because of shared NAT.
+    login-max-failures-per-ip: 30
+    login-lockout: PT15M
+    cleanup-cron: "0 0 3 * * *"
+  cors:
+    # The Vite proxy forwards the browser's Origin header, so both dev hostnames must be allowed.
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  seed:
+    # Demo accounts. Off unless asked for; the passwords then have to be given explicitly.
+    enabled: ${SEED_ENABLED:false}
+    admin-password: ${SEED_ADMIN_PASSWORD:}
+    user-password: ${SEED_USER_PASSWORD:}
+
+springdoc:
+  # API docs and Swagger UI are off unless enabled (the dev profile does).
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

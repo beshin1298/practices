@@ -1,0 +1,33 @@
+# ---- Backend (Maven) ----
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+hs_err_pid*
+
+# ---- Frontend (Vite) ----
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/.vite/
+*.local
+
+# ---- Secrets / environment ----
+.env
+.env.*
+!.env.example
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+
+# ---- IDE / OS ----
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Claude Code: personal settings stay local; skills and CLAUDE.md are committed ----
+.claude/settings.local.json

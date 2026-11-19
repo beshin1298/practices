@@ -1,0 +1,18 @@
+# Build output and dependencies
+node_modules/
+target/
+dist/
+*.class
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
