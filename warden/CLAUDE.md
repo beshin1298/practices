@@ -24,8 +24,8 @@ bash .claude/skills/secure-feature/scripts/verify.sh   # RBAC audit + layering +
 Demo accounts: `admin` / `Admin@123`; `hr`, `manager`, `user`, `lan`, `dev` / `User@123`.
 
 Profiles: `application.yml` has no secret defaults (no JWT secret, DB password, seed or Swagger) and refuses to start
-without them. The `dev` profile (`application-dev.yml`) fills in public throwaway values; `spring-boot:run`, the tests
-and the Docker demo stack use it. A real deployment runs without `dev` and sets the values in `.env`.
+without them. The `dev` profile (`application-dev.yml`) fills in public throwaway values; it is also the default when no
+profile is set (IDE Run, `java -jar`). A real deployment sets `SPRING_PROFILES_ACTIVE=prod` and the values in `.env`.
 
 ## Backend layout
 

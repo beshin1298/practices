@@ -4,6 +4,10 @@
 spring:
   application:
     name: warden
+  profiles:
+    # No profile chosen (IDE "Run", plain java -jar) = local development. A real deployment sets
+    # SPRING_PROFILES_ACTIVE=prod: the dev values are then skipped and every secret below is required.
+    default: dev
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
